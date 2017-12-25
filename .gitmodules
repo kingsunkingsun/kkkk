@@ -1,0 +1,3 @@
+[submodule "deps/Resecs"]
+	path = deps/Resecs
+	url = https://github.com/yangrc1234/Resecs.git

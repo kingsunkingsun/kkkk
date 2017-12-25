@@ -1,18 +1,23 @@
+cmake_minimum_required(VERSION 3.2)
 PROJECT(resecs_sample)
 
 SET(SRC_DIR "${CMAKE_CURRENT_SOURCE_DIR}/source")
 SET(LIB_DIR "${CMAKE_CURRENT_SOURCE_DIR}/deps")
 SET(SOURCES "${SRC_DIR}/main.cpp")
 
-file(GLOB_RECURSE SOURCES "source/*.h")
+file(GLOB_RECURSE HEADERS "source/*.h")
 file(GLOB_RECURSE SOURCES "source/*.cpp")
-add_executable(${PROJECT_NAME} ${SOURCES})
+add_executable(${PROJECT_NAME} ${HEADERS} ${SOURCES})
 
 include_directories("${CMAKE_CURRENT_SOURCE_DIR}/source/include")
 set_target_properties(${PROJECT_NAME} PROPERTIES LINKER_LANGUAGE CXX)
 target_include_directories(${PROJECT_NAME} PRIVATE "${LIB_DIR}")
 target_include_directories(${PROJECT_NAME} PRIVATE "${SRC_DIR}/include")
 set_property(TARGET ${PROJECT_NAME} PROPERTY CXX_STANDARD 11)
+
+#Resecs
+add_subdirectory("${LIB_DIR}/Resecs")
+target_include_directories(${PROJECT_NAME} PRIVATE ${LIB_DIR}/Resecs)
 
 #GLFW
 SET(GLFW_DIR "${LIB_DIR}/glfw")

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "../Resecs/Resecs.h"
+#include "Resecs/Resecs.h"
 #include "Components.h"
 
 using namespace Resecs;
