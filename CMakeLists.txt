@@ -46,6 +46,11 @@ FIND_PACKAGE(Freetype REQUIRED)
 target_include_directories(${PROJECT_NAME} PRIVATE ${FREETYPE_INCLUDE_DIRS})
 target_link_libraries(${PROJECT_NAME} ${FREETYPE_LIBRARIES})
 
+#tests
+SET(GOOGLETEST_DIR "${LIB_DIR}/googletest")
+add_subdirectory(${GOOGLETEST_DIR})
+add_subdirectory("tests")
+
 #copy shader and font into build
 file(COPY "source/fonts" DESTINATION "/")
 file(COPY "source/shaders" DESTINATION "/")

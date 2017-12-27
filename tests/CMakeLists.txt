@@ -1,0 +1,5 @@
+PROJECT(ResEngineTest)
+file(GLOB SOURCES *.cpp)
+ADD_EXECUTABLE(${PROJECT_NAME}  ${SOURCES})
+target_include_directories(${PROJECT_NAME} PRIVATE ${GOOGLETEST_DIR}/goolgetest/include)
+target_link_libraries(${PROJECT_NAME} gtest gtest_main)
