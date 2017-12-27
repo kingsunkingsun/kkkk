@@ -3,9 +3,9 @@
 #include <string>
 #include <vector>
 #include <unordered_map>
-#include <fstream>
 #include <type_traits>
 #include <typeindex>
+
 namespace ResEngine {
 namespace ResourceManagement {
 
@@ -14,6 +14,9 @@ namespace ResourceManagement {
 		class ResourceManager;
 		class BaseResource {
 		public:
+			BaseResource() {
+				
+			}
 			ResourceID GetId() {
 				return m_id;
 			};
@@ -62,6 +65,7 @@ namespace ResourceManagement {
 		};
 
 		class ResourceManager {
+			friend class BaseResource;
 		public:
 			static ResourceManager& Get(){
 				static ResourceManager instance;
@@ -127,27 +131,6 @@ namespace ResourceManagement {
 
 			std::vector<LoadedResource> resources;
 			std::unordered_map<std::string, ResourceID> pathToID;
-		};
-
-		class TextResource : public Resource<TextResource> {
-		public:
-			TextResource(std::string text) {
-				this->text = text;
-			}
-			std::string Text() {
-				return text;
-			}
-		private:
-			std::string text;
-		};
-
-		class TextImporter : public AbstractImporter<TextResource> {
-			virtual BaseResource* Import(std::string path) override {
-				std::ifstream t(path);
-				std::stringstream sstring;
-				sstring << t.rdbuf();
-				return new TextResource(sstring.str());
-			}
 		};
 	}
 }
