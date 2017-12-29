@@ -244,31 +244,31 @@ public:
 	using json = nlohmann::json;
 
 	template<typename TValue>
-	static auto Serialize(SerializedProperty& to,TValue& m, unsigned char) -> decltype(
+	static auto Serialize(SerializedProperty& to,TValue& m) -> decltype(
 		m.begin(),
 		m.end(),
-		Serialize(to,*m.begin(),0),
+		Serialize(to,*m.begin()),
 		void()) {
 
 		int index = 0;
 		for (auto& t : m) {
 			to.Pushback(SerializedProperty());
 			auto spRef = to[index++];
-			Serialize(spRef, t, 0);
+			Serialize(spRef, t);
 		}
 	}
 
 	template<typename TValue>
-	static void Serialize(SerializedProperty& to, std::unordered_map<std::string, TValue>& m, char) {
+	static void Serialize(SerializedProperty& to, std::unordered_map<std::string, TValue>& m) {
 		for (auto& t : m) {
 			auto& sp = (to[t.first] = SerializedProperty());
-			Serialize(sp, t.second, 0);
+			Serialize(sp, t.second);
 		}
 	}
 
 	//if T has its own serialize method.
 	template<typename TMap>
-	static auto Serialize(SerializedProperty& to, TMap& m, int) -> decltype(
+	static auto Serialize(SerializedProperty& to, TMap& m) -> decltype(
 		m.SerializeFunc(SerializerNode(to)), 
 		void()
 		) 
@@ -278,12 +278,12 @@ public:
 
 	//otherwise we try to use our own.
 	template<typename TMap>
-	static auto Serialize(SerializedProperty& to, TMap& m, long) -> decltype((to = m), void()) {
+	static auto Serialize(SerializedProperty& to, TMap& m ) -> decltype((to = m), void()) {
 		to = m;
 	}
 
 	//juses, it's so stupid that std::string acts like a vector.
-	static void Serialize(SerializedProperty& to, std::string& m, long){
+	static void Serialize(SerializedProperty& to, std::string& m){
 		to = m;
 	}
 
@@ -302,7 +302,7 @@ public:
 		template<typename TType>
 		void operator()(const char* id, TType & t) {
 			auto& temp = (m_node[id] = SerializedProperty());
-			Serializer::Serialize(temp, t, 0);
+			Serializer::Serialize(temp, t);
 		}
 
 	private:
@@ -311,7 +311,7 @@ public:
 
 	template<typename T>
 	void Serialize(T target) {
-		Serialize(this->m_jsonData, target, 0);
+		Serialize(this->m_jsonData, target);
 	}
 
 	Serializer() = default;
@@ -338,29 +338,29 @@ public:
 
 	template<typename TValue>
 	void Deserialize(TValue& t) {
-		Deserialize(m_rootNode, t, 0);
+		Deserialize(m_rootNode, t);
 	}
 
 private:
 	SerializedProperty m_rootNode;
 
 	template<typename TValue>
-	static auto Deserialize(SerializedProperty& to, TValue& m, char) -> decltype(
+	static auto Deserialize(SerializedProperty& to, TValue& m) -> decltype(
 		m.begin(),
 		m.end(),
-		Deserialize(to, *m.begin(), 0),
+		Deserialize(to, *m.begin()),
 		void()) {
 
 		int index = 0;
 		for (auto& t : to.GetChildrenRef()) {
 			std::decay_t<decltype(*m.begin())> val;
-			Deserialize(t, val, 0);
+			Deserialize(t, val);
 			m.push_back(val);
 		}
 	}
 
 	template<typename TValue>
-	static void Deserialize(SerializedProperty& to, std::unordered_map<std::string, TValue>& m, char) {
+	static void Deserialize(SerializedProperty& to, std::unordered_map<std::string, TValue>& m) {
 		for (auto& t : to.GetKVMapRef()) {
 			m[t.first] = t.second.GetValue<TValue>();
 		}
@@ -368,7 +368,7 @@ private:
 
 	//if T has its own serialize method.
 	template<typename TMap>
-	static auto Deserialize(SerializedProperty& to, TMap& m, int) -> decltype(
+	static auto Deserialize(SerializedProperty& to, TMap& m) -> decltype(
 		m.SerializeFunc(DeserializerNode(to)),
 		void()
 		) {
@@ -377,7 +377,7 @@ private:
 
 	//otherwise we try to use our own.
 	template<typename TMap>
-	static auto Deserialize(SerializedProperty& to, TMap& m, long) -> decltype(
+	static auto Deserialize(SerializedProperty& to, TMap& m) -> decltype(
 		m = to, 
 		void()
 		) 
@@ -397,7 +397,7 @@ private:
 
 		template<typename TType>
 		void operator()(const char* id, TType & t) {
-			Deserializer::Deserialize(m_node[id],t , 0);
+			Deserializer::Deserialize(m_node[id],t);
 		}
 
 	private:
