@@ -6,7 +6,7 @@
 #include <vector>
 
 #include "Mesh.h"
-#include "Material.h"
+#include <ResEngine\Material.h>
 #include "Camera.h"
 #include "Model.h"
 #include "TextRenderUtil.h"
@@ -27,14 +27,16 @@ public:
     glm::vec3 color = {1.0f,1.0f,1.0f};
 };
 
-class Graphics
-{
-public:
-    static void AddLight(std::shared_ptr<Light> light);
-    static void DrawModelImmediate(const Model& model,const Camera& cam,glm::mat4 trs);
-    static void DrawMeshImmediate(const Mesh& mesh,const Camera& cam,const Material& mat,glm::mat4 trs);
-	static void DrawTextMesh(std::string s, const Camera& cam, const Material& mat, glm::mat4 trs);
-private:
-    static std::vector<std::shared_ptr<Light>> lights;
-};
+namespace ResEngine {
+	class Graphics
+	{
+	public:
+		static void AddLight(std::shared_ptr<Light> light);
+		static void DrawModelImmediate(const Model& model,const Camera& cam,glm::mat4 trs);
+		static void DrawMeshImmediate(const Mesh& mesh,const Camera& cam, Material& mat,glm::mat4 trs);
+		static void DrawTextMesh(std::string s, const Camera& cam, Material& mat, glm::mat4 trs);
+	private:
+		static std::vector<std::shared_ptr<Light>> lights;
+	};
+}
 #endif

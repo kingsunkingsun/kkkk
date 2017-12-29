@@ -13,7 +13,6 @@
 #include "RenderAPI/Camera.h"
 #include "RenderAPI/Graphics.h"
 #include "RenderAPI/Model.h"
-#include "RenderAPI/Material.h"
 #include "Game/SnakeGame.h"
 #include "Game/SnakeGameSystems.h"
 

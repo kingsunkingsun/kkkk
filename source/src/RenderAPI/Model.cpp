@@ -5,7 +5,8 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include "RenderAPI/Mesh.h"
 #include "RenderAPI/Shader.h"
-#include "RenderAPI/Material.h"
+#include "ResEngine\Material.h"
+#include "ResEngine\Texture.h"
 
 #include <string>
 #include <fstream>
@@ -15,6 +16,7 @@
 #include <vector>
 
 using namespace std;
+using namespace ResEngine;
 
 using pMesh = shared_ptr<Mesh>;
 using pTex = shared_ptr<Texture>;
@@ -26,7 +28,7 @@ Model::Model(string const &path, bool gamma) : gammaCorrection(gamma)
 
 void Model::AssignShader(shared_ptr<Shader> pShader){
     for(int i=0; i < materials.size();i++){
-        materials[i]->shader = pShader;
+   //    materials[i]->shader = pShader;
     }
 }
 
