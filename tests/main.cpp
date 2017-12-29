@@ -2,6 +2,7 @@
 #include <ResEngine\TextAsset.h>
 #include <ResEngine\Serialization.h>
 #include <ResEngine\Material.h>
+#include <vector>
 
 TEST(ResourceManagement, SuccessLoad) {
 	using namespace ResEngine;
@@ -33,10 +34,12 @@ public:
 	int field1;
 	int field2;
 	SubStruct field3;
+	std::vector<SubStruct> values;
 	template<typename TArchive>
 	void SerializeFunc(TArchive& arc) {
 		arc("field1", field1);
 		arc("field2", field2);
+		arc("values", values);
 		arc("subStruct", field3);
 	}
 };

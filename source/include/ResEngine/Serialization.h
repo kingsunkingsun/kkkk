@@ -180,6 +180,31 @@ public:
 		return boolValue;
 	}
 
+	template<typename T>
+	T GetValue() const {
+		static_assert(false, "Unsupported type");
+	}
+	
+	template<>
+	bool GetValue<bool>() const {
+		return BoolValue();
+	}
+
+	template<>
+	std::string GetValue<std::string>() const {
+		return StringValue();
+	}
+
+	template<>
+	float GetValue<float>() const {
+		return FloatValue();
+	}
+
+	template<>
+	int GetValue<int>() const {
+		return IntValue();
+	}
+
 	template <typename T>
 	void Pushback(T val) {
 		DetermineType(ValueType::Array);
@@ -218,57 +243,75 @@ class Serializer {
 public:
 	using json = nlohmann::json;
 
+	template<typename TValue>
+	static auto Serialize(SerializedProperty& to,TValue& m, unsigned char) -> decltype(
+		m.begin(),
+		m.end(),
+		Serialize(to,*m.begin(),0),
+		void()) {
+
+		int index = 0;
+		for (auto& t : m) {
+			to.Pushback(SerializedProperty());
+			auto spRef = to[index++];
+			Serialize(spRef, t, 0);
+		}
+	}
+
+	template<typename TValue>
+	static void Serialize(SerializedProperty& to, std::unordered_map<std::string, TValue>& m, char) {
+		for (auto& t : m) {
+			auto& sp = (to[t.first] = SerializedProperty());
+			Serialize(sp, t.second, 0);
+		}
+	}
+
+	//if T has its own serialize method.
+	template<typename TMap>
+	static auto Serialize(SerializedProperty& to, TMap& m, int) -> decltype(
+		m.SerializeFunc(SerializerNode(to)), 
+		void()
+		) 
+	{
+		m.SerializeFunc(SerializerNode(to));
+	}
+
+	//otherwise we try to use our own.
+	template<typename TMap>
+	static auto Serialize(SerializedProperty& to, TMap& m, long) -> decltype((to = m), void()) {
+		to = m;
+	}
+
+	//juses, it's so stupid that std::string acts like a vector.
+	static void Serialize(SerializedProperty& to, std::string& m, long){
+		to = m;
+	}
+
+	template<typename TMap>
+	void Serialize(...) {
+		static_assert(false, "Can't find serialization method!");
+	}
+
 	class SerializerNode {
 	private:
 
-		template<typename TValue>
-		void Serialize(const char* id, std::unordered_map<std::string,TValue>& m, char){
-			this->jsonNode->operator[](id) = SerializedProperty();
-			auto& newSPNodeRef = this->jsonNode->operator[](id);
-			for (auto& t : m) {
-				auto newNode = SerializerNode(&newSPNodeRef);
-				newNode.Serialize(t.first.c_str(), t.second,0);
-			}
-		}
-
-		//if T has its own serialize method.
-		template<typename TMap>
-		auto Serialize(const char* id, TMap& m,int) -> decltype((m.SerializeFunc(*this)),void())
-		{
-			this->jsonNode->operator[](id) = SerializedProperty();
-			auto& newSPNodeRef = this->jsonNode->operator[](id);
-			m.SerializeFunc(SerializerNode(&newSPNodeRef));
-		}
-
-		//otherwise we try to use our own.
-		template<typename TMap>
-		auto Serialize(const char* id, TMap& m,long) -> decltype((jsonNode->operator[](id)), void())
-		{
-			jsonNode->operator[](id) = m;
-		}
-
-		template<typename TMap> 
-		void Serialize(...) {
-			static_assert(false,"Can't find serialization method!");
-		}
-
 	public:
-		SerializerNode(SerializedProperty* jsonNode) {
-			this->jsonNode = jsonNode;
+		SerializerNode(SerializedProperty& node) : m_node(node) {
 		}
 
 		template<typename TType>
 		void operator()(const char* id, TType & t) {
-			Serialize(id, t, 0);
+			auto& temp = (m_node[id] = SerializedProperty());
+			Serializer::Serialize(temp, t, 0);
 		}
 
 	private:
-		SerializedProperty* jsonNode;
+		SerializedProperty& m_node;
 	};
 
 	template<typename T>
 	void Serialize(T target) {
-		target.SerializeFunc(SerializerNode(&m_jsonData));
+		Serialize(this->m_jsonData, target, 0);
 	}
 
 	Serializer() = default;
@@ -289,55 +332,77 @@ private:
 
 class Deserializer {
 public:
-	using json = nlohmann::json;
+	Deserializer(SerializedProperty data) : m_rootNode(data) {
 
-	Deserializer(SerializedProperty data) : m_jsonData(data) {
+	}
 
+	template<typename TValue>
+	void Deserialize(TValue& t) {
+		Deserialize(m_rootNode, t, 0);
+	}
+
+private:
+	SerializedProperty m_rootNode;
+
+	template<typename TValue>
+	static auto Deserialize(SerializedProperty& to, TValue& m, char) -> decltype(
+		m.begin(),
+		m.end(),
+		Deserialize(to, *m.begin(), 0),
+		void()) {
+
+		int index = 0;
+		for (auto& t : to.GetChildrenRef()) {
+			std::decay_t<decltype(*m.begin())> val;
+			Deserialize(t, val, 0);
+			m.push_back(val);
+		}
+	}
+
+	template<typename TValue>
+	static void Deserialize(SerializedProperty& to, std::unordered_map<std::string, TValue>& m, char) {
+		for (auto& t : to.GetKVMapRef()) {
+			m[t.first] = t.second.GetValue<TValue>();
+		}
+	}
+
+	//if T has its own serialize method.
+	template<typename TMap>
+	static auto Deserialize(SerializedProperty& to, TMap& m, int) -> decltype(
+		m.SerializeFunc(DeserializerNode(to)),
+		void()
+		) {
+		m.SerializeFunc(DeserializerNode(to));
+	}
+
+	//otherwise we try to use our own.
+	template<typename TMap>
+	static auto Deserialize(SerializedProperty& to, TMap& m, long) -> decltype(
+		m = to, 
+		void()
+		) 
+	{
+		m = to;
+	}
+
+	template<typename TMap>
+	static void Deserialize(...) {
+		static_assert(false, "Can't find serialization method!");
 	}
 
 	class DeserializerNode {
 	public:
-		DeserializerNode(SerializedProperty* jsonNode) {
-			this->jsonNode = jsonNode;
-		}
-
-		void operator()(const char* id, glm::vec4& t) {
-			t.x = (*jsonNode)[id]["x"];
-			t.y = (*jsonNode)[id]["y"];
-			t.z = (*jsonNode)[id]["z"];
-			t.w = (*jsonNode)[id]["w"];
-		}
-
-		void operator()(const char* id, float& t) {
-			t = (*jsonNode)[id];
-		}
-
-		void operator()(const char* id, std::string& t) {
-			t = (*jsonNode)[id];
-		}
-
-		void operator()(const char* id, int& t) {
-			t = (*jsonNode)[id];
+		DeserializerNode(SerializedProperty& node) : m_node(node) {
 		}
 
 		template<typename TType>
 		void operator()(const char* id, TType & t) {
-			auto node = DeserializerNode(&(*jsonNode)[id]);
-			t.SerializeFunc(node);
+			Deserializer::Deserialize(m_node[id],t , 0);
 		}
 
 	private:
-		SerializedProperty* jsonNode;
-	};
-
-	template<typename T>
-	void Deserialize(T& target) {
-		target.SerializeFunc(DeserializerNode(&m_jsonData));
-	}
-
-private:
-	SerializedProperty m_jsonData;
-private:
+		SerializedProperty& m_node;
+	}; 
 };
-	}
+}
 }
